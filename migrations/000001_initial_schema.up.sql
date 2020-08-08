@@ -15,6 +15,11 @@ CREATE TABLE IF NOT EXISTS users(
   UNIQUE(token)
 );
 
+DROP VIEW IF EXISTS userlist;
+CREATE VIEW userlist AS
+  SELECT * FROM USERS
+  ORDER BY active DESC, username;
+
 DROP FUNCTION IF EXISTS on_delete_user();
 CREATE FUNCTION on_delete_user() RETURNS TRIGGER AS $$
 BEGIN
@@ -27,4 +32,3 @@ END;
 $$ LANGUAGE plpgsql;
 
 COMMIT;
-
