@@ -1,0 +1,16 @@
+[web]
+address = "0.0.0.0"
+port = 8000
+
+[amqp]
+host = "172.17.0.1"
+port = 5672
+user = "ttb"
+password = "s3kr3t"
+
+[database]
+host = "172.17.0.1"
+port = 5432
+user = "lorenzo"
+password = "s3kr3t"
+database = "ttb_auth"

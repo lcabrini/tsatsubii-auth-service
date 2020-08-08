@@ -1,0 +1,52 @@
+{{template "base" .}}
+{{define "navbar"}}{{end}}
+{{define "toolbar"}}{{end}}
+{{define "main"}}
+  <div class="hero is-fullheight has-background-info">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+	<div class="column is-6 is-offset-3">
+	  <div class="box">
+	    <div class="box">
+	      <img src="/static/ant.png">
+	    </div>
+
+	    {{if .error}}
+	      <div class="notification is-danger">
+		{{.error}}
+	      </div>
+	    {{end}}
+	    
+	    <div class="title has-text-grey is-5">
+	      Login
+	    </div>
+
+	    <form method="post">
+	      <div class="field">
+		<div class="control has-icon has-icons-left">
+		  <input class="input" type="text" name="username" placeholder="Username" autofocus>
+		  <span class="icon is-small is-left">
+		    <i class="fa fa-user"></i>
+		  </span>
+		</div>
+	      </div>
+
+	      <div class="field">
+		<div class="control has-icon has-icons-left">
+		  <input class="input" type="password" name="password" placeholder="Password">
+		  <span class="icon is-small is-left">
+		    <i class="fa fa-lock"></i>
+		  </span>
+		</div>
+	      </div>
+
+	      <button class="button is-block is-success is-fullwidth">
+		Login
+	      </button>
+	    </form>
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+{{end}}
