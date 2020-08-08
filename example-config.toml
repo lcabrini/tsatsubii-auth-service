@@ -11,6 +11,6 @@ password = "s3kr3t"
 [database]
 host = "172.17.0.1"
 port = 5432
-user = "lorenzo"
+user = "ttb_auth"
 password = "s3kr3t"
 database = "ttb_auth"
