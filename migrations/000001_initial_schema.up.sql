@@ -17,8 +17,9 @@ CREATE TABLE IF NOT EXISTS users(
 
 DROP VIEW IF EXISTS userlist;
 CREATE VIEW userlist AS
-  SELECT * FROM USERS
-  ORDER BY active DESC, username;
+  SELECT id, username FROM USERS
+  WHERE active = 't'
+  ORDER BY username;
 
 DROP FUNCTION IF EXISTS on_delete_user();
 CREATE FUNCTION on_delete_user() RETURNS TRIGGER AS $$
