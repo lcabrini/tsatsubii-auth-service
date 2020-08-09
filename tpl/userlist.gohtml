@@ -1,0 +1,41 @@
+{{template "base" .}}
+{{define "toolbar"}}{{end}}
+{{define "main"}}
+  {{range $i, $u := .users}}
+    {{if first $i $}}
+      <table class="table is-fullwidth">
+	<thead>
+	  <tr>
+	    <th>Username</th>
+	    <th>Actions</th>
+	  </tr>
+	  </tr>
+	</thead>
+	<tbody>
+    {{end}}
+
+    <tr>
+      <td>{{$u.Username}}</td>
+      <td>
+	<a class="button" href="/users/{{$u.Id}}">
+	  View
+	</a>
+	
+	<a class="button" href="/users/{{$u.Id}}/edit">
+	  Edit
+	</a>
+
+	<a class="button is-danger" href="/users/{{$u.Id}}/delete">
+	  Delete
+	</a>
+      </td>
+    </tr>
+        
+    {{if last $i $}}
+	</tbody>
+      </table>
+    {{end}}
+  {{else}}
+    <p>There are no users</p>
+  {{end}}
+{{end}}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"reflect"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
@@ -20,6 +21,15 @@ const (
 var (
 	sessionStore *sessions.CookieStore
 )
+
+var fns = template.FuncMap{
+	"first": func(x int, a interface{}) bool {
+		return x == 0
+	},
+	"last": func(x int, a interface{}) bool {
+		return x == reflect.ValueOf(a).Len()
+	},
+}
 
 func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	session, err := sessionStore.Get(r, CookieName)
@@ -145,6 +155,66 @@ func logoutGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	data := map[string]interface{}{}
+	users, _ := userList()
+	data["users"] = users
+
+	files := []string{
+		"tpl/userlist.gohtml",
+		"tpl/navbar.gohtml",
+		"tpl/base.gohtml",
+	}
+	t, err := template.New("userlist.gohtml").Funcs(fns).ParseFiles(files...)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func loginRequired(next httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		session, err := sessionStore.Get(r, CookieName)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		user, ok := session.Values["user"].(User)
+		if !ok {
+			user = User{}
+		}
+
+		if user.Id == uuid.Nil {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		next(w, r, ps)
+	}
+}
+
+func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
+}
+
+func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+}
+
+func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+}
+
+func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Delete: %s", ps.ByName("id"))
+}
+
 func startHttp() {
 	authKey := securecookie.GenerateRandomKey(64)
 	encKey := securecookie.GenerateRandomKey(32)
@@ -162,6 +232,11 @@ func startHttp() {
 	router.GET("/login", loginGet)
 	router.POST("/login", loginPost)
 	router.GET("/logout", logoutGet)
+	router.GET("/users", loginRequired(userListGet))
+	router.GET("/users/:id", userGet)
+	router.GET("/users/:id/edit", userEditGet)
+	router.POST("/users/:id/edit", userEditPost)
+	router.GET("/users/:id/delete", userDeleteGet)
 	c := config.Web
 	listen := fmt.Sprintf("%s:%s", c.Address, c.Port)
 	log.Fatal(http.ListenAndServe(listen, context.ClearHandler(router)))
