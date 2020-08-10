@@ -1,5 +1,14 @@
 {{template "base" .}}
-{{define "toolbar"}}{{end}}
+{{define "toolbar"}}
+  <nav class="level has-background-light">
+    <div class="level-left"></div>
+    <div class="level-right">
+      <p class="level-item">
+	<a class="button is-success" href="/users/add">Add</a>
+      </p>
+    </div>
+  </nav>
+{{end}}
 {{define "main"}}
   {{range $i, $u := .users}}
     {{if first $i $}}
@@ -17,15 +26,15 @@
     <tr>
       <td>{{$u.Username}}</td>
       <td>
-	<a class="button" href="/users/{{$u.Id}}">
+	<a class="button" href="/users/view/{{$u.Id}}">
 	  View
 	</a>
 	
-	<a class="button" href="/users/{{$u.Id}}/edit">
+	<a class="button" href="/users/edit/{{$u.Id}}">
 	  Edit
 	</a>
 
-	<a class="button is-danger" href="/users/{{$u.Id}}/delete">
+	<a class="button is-danger" href="/users/delete/{{$u.Id}}">
 	  Delete
 	</a>
       </td>

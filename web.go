@@ -177,6 +177,30 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
+func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+}
+
+func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+}
+
+func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
+}
+
+func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+}
+
+func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+}
+
+func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Delete: %s", ps.ByName("id"))
+}
+
 func loginRequired(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		session, err := sessionStore.Get(r, CookieName)
@@ -199,22 +223,6 @@ func loginRequired(next httprouter.Handle) httprouter.Handle {
 	}
 }
 
-func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
-}
-
-func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
-}
-
-func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
-}
-
-func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Delete: %s", ps.ByName("id"))
-}
-
 func startHttp() {
 	authKey := securecookie.GenerateRandomKey(64)
 	encKey := securecookie.GenerateRandomKey(32)
@@ -232,11 +240,13 @@ func startHttp() {
 	router.GET("/login", loginGet)
 	router.POST("/login", loginPost)
 	router.GET("/logout", logoutGet)
-	router.GET("/users", loginRequired(userListGet))
-	router.GET("/users/:id", userGet)
-	router.GET("/users/:id/edit", userEditGet)
-	router.POST("/users/:id/edit", userEditPost)
-	router.GET("/users/:id/delete", userDeleteGet)
+	router.GET("/users/list", loginRequired(userListGet))
+	router.GET("/users/add", loginRequired(userAddGet))
+	router.POST("/usesr/add", loginRequired(userAddGet))
+	router.GET("/users/view/:id", userGet)
+	router.GET("/users/edit/:id", userEditGet)
+	router.POST("/users/edit/:id", userEditPost)
+	router.GET("/users/delete/:id", userDeleteGet)
 	c := config.Web
 	listen := fmt.Sprintf("%s:%s", c.Address, c.Port)
 	log.Fatal(http.ListenAndServe(listen, context.ClearHandler(router)))
