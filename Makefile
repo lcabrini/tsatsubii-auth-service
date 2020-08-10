@@ -11,12 +11,12 @@ CONFIG = config.toml
 
 all: docker-build 
 
-.PHONY: docker-deploy $(SRC) $(TPL) $(CONFIG)
-docker-build: $(PROG)
+.PHONY: docker-build
+docker-build: $(SRC) $(TPL) $(CONFIG)
 	docker build $(BUILD_ARGS) -t $(TAG) .
 
 .PHONY: run
-run: docker-deploy
+run: docker-build
 	docker run -it --publish 8000:8000 $(TAG)
 
 .PHONY: clean
