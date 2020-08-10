@@ -19,6 +19,11 @@ type User struct {
 	CreatedAt time.Time `json:created_at`
 }
 
+type UserList struct {
+	Id       uuid.UUID `json:id`
+	Username string    `json:username`
+}
+
 var (
 	ErrAuthenticationFailed = errors.New("authentication failed")
 	ErrUserInactive         = errors.New("user is inactive")
@@ -134,6 +139,37 @@ func updateUser(user User) (User, error) {
 	}
 
 	return user, err
+}
+
+func userList() ([]UserList, error) {
+	var users []UserList
+
+	q := "SELECT * FROM userlist"
+	rows, err := db.Query(q)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		item := UserList{}
+		err := rows.Scan(&item.Id, &item.Username)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		} else {
+			users = append(users, item)
+		}
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return users, nil
 }
 
 /*

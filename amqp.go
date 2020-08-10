@@ -16,6 +16,15 @@ type AuthResponse struct {
 	Status int `json:status`
 }
 
+type UserListRequest struct {
+	AppKey string `json:appkey`
+}
+
+type UserListResponse struct {
+	Status int        `json:status`
+	Users  []UserList `json:userlist`
+}
+
 func startAmqp() {
 	var err error
 
@@ -45,6 +54,7 @@ func startAmqp() {
 	}
 
 	go consumeAuthenticate(ch)
+	go consumeUserlist(ch)
 	go consumeAddUser(ch)
 }
 
@@ -112,6 +122,73 @@ func consumeAuthenticate(ch *amqp.Channel) {
 		}
 	}()
 	<-forever
+}
+
+func consumeUserlist(ch *amqp.Channel) {
+	q, err := declareQueue("listusers", ch)
+	if err != nil {
+		log.Error(err)
+	}
+
+	msgs, err := ch.Consume(
+		q.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil)
+	if err != nil {
+		log.Error(err)
+	}
+
+	forever := make(chan bool)
+	go func() {
+		req := UserListRequest{}
+		for d := range msgs {
+			if err := json.Unmarshal(d.Body, &req); err != nil {
+				log.Error(err)
+			}
+
+			resp := UserListResponse{}
+
+			// TODO: once I add application keys, check to ensure that
+			// the application key is valid.
+
+			userList, err := userList()
+			switch {
+			case err != nil:
+				resp.Status = 1
+				resp.Users = nil
+			default:
+				resp.Status = 0
+				resp.Users = userList
+			}
+
+			body, err := json.Marshal(resp)
+			if err != nil {
+				log.Error(err)
+			}
+
+			err = ch.Publish(
+				"",
+				d.ReplyTo,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType:   "text/plain",
+					CorrelationId: d.CorrelationId,
+					Body:          body,
+				})
+			if err != nil {
+				log.Error(err)
+			}
+
+			d.Ack(false)
+		}
+	}()
+	<-forever
+
 }
 
 func consumeAddUser(ch *amqp.Channel) {
