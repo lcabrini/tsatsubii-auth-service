@@ -1,7 +1,11 @@
 {{template "base" .}}
 {{define "main-title"}}
   <div class="container">
-    <h2 class="title">Add User</h2>
+    {{if .user}}
+      <h2 class="title">Edit User: {{.user.Username}}</h2>
+    {{else}}
+      <h2 class="title">Add User</h2>
+    {{end}}
   </div>
 {{end}}
 {{define "toolbar"}}{{end}}
