@@ -9,6 +9,11 @@
     </div>
   </nav>
 {{end}}
+
+{{define "main-title"}}
+  <h2 class="title">Users</h2>
+{{end}}
+
 {{define "main"}}
   {{range $i, $u := .users}}
     {{if first $i $}}
