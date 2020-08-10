@@ -2,7 +2,9 @@
 {{define "main-title"}}
   <div class="container">
     {{if .user}}
-      <h2 class="title">Edit User: {{.user.Username}}</h2>
+      <h2 class="title">Edit User:
+	<span class="has-text-info">{{.user.Username}}</span>
+      </h2>
     {{else}}
       <h2 class="title">Add User</h2>
     {{end}}
