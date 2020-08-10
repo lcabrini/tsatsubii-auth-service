@@ -178,7 +178,28 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, err := sessionStore.Get(r, CookieName)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	files := []string{
+		"tpl/user-form.gohtml",
+		"tpl/navbar.gohtml",
+		"tpl/base.gohtml",
+	}
+	t, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -242,7 +263,7 @@ func startHttp() {
 	router.GET("/logout", logoutGet)
 	router.GET("/users/list", loginRequired(userListGet))
 	router.GET("/users/add", loginRequired(userAddGet))
-	router.POST("/usesr/add", loginRequired(userAddGet))
+	router.POST("/users/add", loginRequired(userAddPost))
 	router.GET("/users/view/:id", userGet)
 	router.GET("/users/edit/:id", userEditGet)
 	router.POST("/users/edit/:id", userEditPost)

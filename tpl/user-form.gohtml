@@ -1,0 +1,74 @@
+{{template "base" .}}
+{{define "main-title"}}
+  <div class="container">
+    <h2 class="title">Add User</h2>
+  </div>
+{{end}}
+{{define "toolbar"}}{{end}}
+
+{{define "main"}}
+  <form class="control" method="post">
+    <div class="container">
+      <div class="columns">
+	<div class="column is-half">
+	  <div class="field">
+	    <label class="label">Username</label>
+	    <div class="control">
+	      <input class="input" type="text" name="username" autofocus>
+	    </div>
+	  </div>
+	</div>
+      </div>
+
+      <div class="columns">
+	<div class="column is-half">  
+	  <div class="field">
+	    <label class="label">Password</label>
+	    <div class="control">
+	      <input class="input" type="password" name="password">
+	    </div>
+	  </div>
+	</div>
+
+	<div class="column">
+	  <div class="field">
+	    <label class="label">Password Confirm</label>
+	    <div class="control">
+	      <input class="input" type="password" name="password2">
+	    </div>
+	  </div>
+	</div>
+      </div>
+
+      <div class="columns">
+	<div class="column is-half">
+	  <div class="field">
+	    <label class="label">Email</label>
+	    <div class="control">
+	      <input class="input" type="text" name="email">
+	    </div>
+	  </div>
+	</div>
+	
+	<div class="column is-half">
+	  <div class="field">
+	    <label class="label">Phone</label>
+	    <div class="control">
+	      <input class="input" type="text" name="phone">
+	    </div>
+	  </div>
+	</div>
+      </div>
+
+      {{if .user}}
+	<input type="hidden" name="id" value="{{.user.Id}}">
+      {{end}}
+      
+      <div class="field">
+	<p class="control has-text-right">
+	  <input type="submit" class="button is-success" value="Add">
+	</p>
+      </div>
+    </div>
+  </form>
+{{end}}
