@@ -1,7 +1,7 @@
 {{template "base" .}}
-{{define "main-title"}}
+{{define "main-title"}}  
   <div class="container">
-    {{if .user}}
+    {{if not .new}}
       <h2 class="title">Edit User:
 	<span class="has-text-info">{{.user.Username}}</span>
       </h2>
@@ -81,7 +81,7 @@
 	</div>
       </div>
 
-      {{if .user}}
+      {{if not .new}}
 	<input type="hidden" name="id" value="{{.user.Id}}">
       {{end}}
       
