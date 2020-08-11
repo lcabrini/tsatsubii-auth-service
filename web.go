@@ -194,8 +194,10 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		data["errors"] = flashes
 	}
 
+	data["new"] = true
 	if user, ok := session.Values["form"]; ok {
 		data["user"] = user
+		delete(session.Values, "form")
 	}
 
 	err = session.Save(r, w)
