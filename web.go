@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
@@ -178,11 +179,25 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, err := sessionStore.Get(r, CookieName)
+	session, err := sessionStore.Get(r, CookieName)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	data := map[string]interface{}{}
+	if flashes := session.Flashes(); len(flashes) > 0 {
+		data["errors"] = flashes
+	}
+
+	if user, ok := session.Values["form"]; ok {
+		data["user"] = user
+	}
+
+	err = session.Save(r, w)
+	if err != nil {
+		log.Error(err)
 	}
 
 	files := []string{
@@ -195,7 +210,7 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Error(err)
 	}
 
-	err = t.Execute(w, nil)
+	err = t.Execute(w, data)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -203,7 +218,69 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var formErrors []string
 
+	session, err := sessionStore.Get(r, CookieName)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	username := strings.TrimSpace(r.FormValue("username"))
+	switch {
+	case username == "":
+		formErrors = append(formErrors, "no username specified")
+	case usernameExists(username):
+		formErrors = append(formErrors, "that username already exists")
+	}
+
+	email := strings.TrimSpace(r.FormValue("email"))
+	if email == "" {
+		formErrors = append(formErrors, "no email specified")
+	}
+
+	phone := strings.TrimSpace(r.FormValue("phone"))
+
+	password := r.FormValue("password")
+	password2 := r.FormValue("password2")
+	switch {
+	case password == "":
+		formErrors = append(formErrors, "empty password")
+	case password != password2:
+		formErrors = append(formErrors, "the passwords don't match")
+	}
+
+	user := User{
+		Username: username,
+		Password: password,
+		Email:    email,
+		Phone:    phone,
+	}
+
+	if len(formErrors) == 0 {
+		user, err = storeUser(user)
+		if err != nil {
+			formErrors = append(formErrors, err.Error())
+		}
+	}
+
+	if len(formErrors) > 0 {
+		for _, e := range formErrors {
+			session.AddFlash(e)
+		}
+		session.Values["form"] = user
+		err = session.Save(r, w)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/users/add", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/users/list", http.StatusFound)
+	}
 }
 
 func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

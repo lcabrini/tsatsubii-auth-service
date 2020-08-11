@@ -10,7 +10,22 @@
     {{end}}
   </div>
 {{end}}
-{{define "toolbar"}}{{end}}
+
+{{define "toolbar"}}
+  <!-- TODO: this should be moved out once we have an area for messages -->
+  {{if .errors}}
+    <div class="notification is-danger">
+      <p>You have the following errors:</p>
+      <div class="content">
+	<ol>
+	  {{range $e := .errors}}
+	    <li>{{$e}}</li>
+	  {{end}}
+	</ol>
+      </div>
+    </div>
+  {{end}}
+{{end}}
 
 {{define "main"}}
   <form class="control" method="post">
@@ -20,7 +35,7 @@
 	  <div class="field">
 	    <label class="label">Username</label>
 	    <div class="control">
-	      <input class="input" type="text" name="username" autofocus>
+	      <input class="input" type="text" name="username"{{if .user}} value="{{.user.Username}}"{{end}}>
 	    </div>
 	  </div>
 	</div>
@@ -51,7 +66,7 @@
 	  <div class="field">
 	    <label class="label">Email</label>
 	    <div class="control">
-	      <input class="input" type="text" name="email">
+	      <input class="input" type="text" name="email"{{if .user}} value="{{.user.Email}}"{{end}}>
 	    </div>
 	  </div>
 	</div>
@@ -60,7 +75,7 @@
 	  <div class="field">
 	    <label class="label">Phone</label>
 	    <div class="control">
-	      <input class="input" type="text" name="phone">
+	      <input class="input" type="text" name="phone"{{if .user}} value="{{.user.Phone}}"{{end}}>
 	    </div>
 	  </div>
 	</div>
