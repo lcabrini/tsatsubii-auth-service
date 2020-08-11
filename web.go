@@ -53,6 +53,7 @@ func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	files := []string{
 		"tpl/index.gohtml",
 		"tpl/navbar.gohtml",
+		"tpl/page.gohtml",
 		"tpl/base.gohtml",
 	}
 	t, err := template.ParseFiles(files...)
@@ -76,6 +77,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	data := map[string]interface{}{}
+	data["hidenav"] = true
 	if flashes := session.Flashes(); len(flashes) > 0 {
 		data["error"] = flashes[0]
 	}
@@ -162,11 +164,12 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	data["users"] = users
 
 	files := []string{
-		"tpl/userlist.gohtml",
+		"tpl/user-list.gohtml",
 		"tpl/navbar.gohtml",
+		"tpl/page.gohtml",
 		"tpl/base.gohtml",
 	}
-	t, err := template.New("userlist.gohtml").Funcs(fns).ParseFiles(files...)
+	t, err := template.New("user-list.gohtml").Funcs(fns).ParseFiles(files...)
 	if err != nil {
 		log.Error(err)
 	}
@@ -203,6 +206,7 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	files := []string{
 		"tpl/user-form.gohtml",
 		"tpl/navbar.gohtml",
+		"tpl/page.gohtml",
 		"tpl/base.gohtml",
 	}
 	t, err := template.ParseFiles(files...)

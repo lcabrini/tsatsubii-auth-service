@@ -1,0 +1,18 @@
+{{template "base" .}}
+
+{{define "jshead"}}{{end}}
+{{define "jsbody"}}{{end}}
+{{define "messages"}}{{end}}
+{{define "toolbar"}}{{end}}
+
+{{define "body"}}
+  {{template "navbar" .}}
+  
+  <main class="container">
+    {{template "main-title" .}}
+    {{template "messages" .}}
+    {{template "toolbar" .}}
+    {{template "main" .}}
+    {{template "toolbar" .}}
+  </main>
+{{end}}
