@@ -13,8 +13,10 @@
 
     <body>
       {{template "navbar" .}}
-      {{template "toolbar" .}}
+      
       <main>
+	{{template "main-title" .}}
+	{{template "toolbar" .}}
 	{{template "main" .}}
       </main>
       <footer class="footer">

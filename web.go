@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
@@ -27,7 +28,7 @@ var fns = template.FuncMap{
 		return x == 0
 	},
 	"last": func(x int, a interface{}) bool {
-		return x == reflect.ValueOf(a).Len()
+		return x == reflect.ValueOf(a).Len()-1
 	},
 }
 
@@ -177,6 +178,127 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
+func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	session, err := sessionStore.Get(r, CookieName)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{}
+	if flashes := session.Flashes(); len(flashes) > 0 {
+		data["errors"] = flashes
+	}
+
+	if user, ok := session.Values["form"]; ok {
+		data["user"] = user
+	}
+
+	err = session.Save(r, w)
+	if err != nil {
+		log.Error(err)
+	}
+
+	files := []string{
+		"tpl/user-form.gohtml",
+		"tpl/navbar.gohtml",
+		"tpl/base.gohtml",
+	}
+	t, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var formErrors []string
+
+	session, err := sessionStore.Get(r, CookieName)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	username := strings.TrimSpace(r.FormValue("username"))
+	switch {
+	case username == "":
+		formErrors = append(formErrors, "no username specified")
+	case usernameExists(username):
+		formErrors = append(formErrors, "that username already exists")
+	}
+
+	email := strings.TrimSpace(r.FormValue("email"))
+	if email == "" {
+		formErrors = append(formErrors, "no email specified")
+	}
+
+	phone := strings.TrimSpace(r.FormValue("phone"))
+
+	password := r.FormValue("password")
+	password2 := r.FormValue("password2")
+	switch {
+	case password == "":
+		formErrors = append(formErrors, "empty password")
+	case password != password2:
+		formErrors = append(formErrors, "the passwords don't match")
+	}
+
+	user := User{
+		Username: username,
+		Password: password,
+		Email:    email,
+		Phone:    phone,
+	}
+
+	if len(formErrors) == 0 {
+		user, err = storeUser(user)
+		if err != nil {
+			formErrors = append(formErrors, err.Error())
+		}
+	}
+
+	if len(formErrors) > 0 {
+		for _, e := range formErrors {
+			session.AddFlash(e)
+		}
+		session.Values["form"] = user
+		err = session.Save(r, w)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/users/add", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/users/list", http.StatusFound)
+	}
+}
+
+func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
+}
+
+func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+}
+
+func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+}
+
+func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "Delete: %s", ps.ByName("id"))
+}
+
 func loginRequired(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		session, err := sessionStore.Get(r, CookieName)
@@ -199,22 +321,6 @@ func loginRequired(next httprouter.Handle) httprouter.Handle {
 	}
 }
 
-func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
-}
-
-func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
-}
-
-func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
-}
-
-func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Delete: %s", ps.ByName("id"))
-}
-
 func startHttp() {
 	authKey := securecookie.GenerateRandomKey(64)
 	encKey := securecookie.GenerateRandomKey(32)
@@ -232,11 +338,13 @@ func startHttp() {
 	router.GET("/login", loginGet)
 	router.POST("/login", loginPost)
 	router.GET("/logout", logoutGet)
-	router.GET("/users", loginRequired(userListGet))
-	router.GET("/users/:id", userGet)
-	router.GET("/users/:id/edit", userEditGet)
-	router.POST("/users/:id/edit", userEditPost)
-	router.GET("/users/:id/delete", userDeleteGet)
+	router.GET("/users/list", loginRequired(userListGet))
+	router.GET("/users/add", loginRequired(userAddGet))
+	router.POST("/users/add", loginRequired(userAddPost))
+	router.GET("/users/view/:id", userGet)
+	router.GET("/users/edit/:id", userEditGet)
+	router.POST("/users/edit/:id", userEditPost)
+	router.GET("/users/delete/:id", userDeleteGet)
 	c := config.Web
 	listen := fmt.Sprintf("%s:%s", c.Address, c.Port)
 	log.Fatal(http.ListenAndServe(listen, context.ClearHandler(router)))
