@@ -16,7 +16,7 @@
 
 {{define "main"}}
   {{range $i, $u := .users}}
-    {{if first $i $}}
+    {{if first $i $.users}}
       <table class="table is-fullwidth">
 	<thead>
 	  <tr>
@@ -45,7 +45,7 @@
       </td>
     </tr>
         
-    {{if last $i $}}
+    {{if last $i $.users}}
 	</tbody>
       </table>
     {{end}}
