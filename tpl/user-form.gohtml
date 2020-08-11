@@ -1,5 +1,4 @@
 {{template "base" .}}
-{{define "messages"}}{{end}}
 {{define "main-title"}}
   <div class="container">
     {{if .user}}
@@ -12,7 +11,7 @@
   </div>
 {{end}}
 
-{{define "toolbar"}}
+{{define "messages"}}
   <!-- TODO: this should be moved out once we have an area for messages -->
   {{if .errors}}
     <div class="notification is-danger">
