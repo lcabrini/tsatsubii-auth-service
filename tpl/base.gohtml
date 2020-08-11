@@ -1,7 +1,7 @@
 {{define "base"}}
   <!doctype html>
 
-  <html lang="end">
+  <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" contents="width=device-width, initial-scal=1">
@@ -10,14 +10,9 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ficons@1.1.52/dist/ficons/font.css">
     </head>
 
-    <body>
-      {{template "navbar" .}}
+    <body{{if not .hidenav}} class="has-navbar-fixed-top"{{end}}>
+      {{template "body" .}}
       
-      <main>
-	{{template "main-title" .}}
-	{{template "toolbar" .}}
-	{{template "main" .}}
-      </main>
       <footer class="footer">
 	<div class="content has-text-centered">
 	  <strong>Tsatsubii Auth</strong> Copyright &copy; 2020 Lorenzo Cabrini

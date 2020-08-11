@@ -1,0 +1,13 @@
+{{template "base" .}}
+
+{{define "body"}}
+  {{template "navbar" .}}
+  
+  <main class="container">
+    {{template "main-title" .}}
+    {{template "messages" .}}
+    {{template "toolbar" .}}
+    {{template "main" .}}
+    {{template "toolbar" .}}
+  </main>
+{{end}}
