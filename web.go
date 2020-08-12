@@ -44,22 +44,7 @@ func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	files := []string{
-		"tpl/index.gohtml",
-		"tpl/navbar.gohtml",
-		"tpl/page.gohtml",
-		"tpl/base.gohtml",
-	}
-	t, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	doTemplate("index.gohtml", nil, w)
 }
 
 func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -128,22 +113,7 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	users, _ := userList()
 	data["users"] = users
 
-	files := []string{
-		"tpl/user-list.gohtml",
-		"tpl/navbar.gohtml",
-		"tpl/page.gohtml",
-		"tpl/base.gohtml",
-	}
-	t, err := template.New("user-list.gohtml").Funcs(fns).ParseFiles(files...)
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	doTemplate("user-list.gohtml", data, w)
 }
 
 func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -162,22 +132,7 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	saveSession(session, w, r)
 
-	files := []string{
-		"tpl/user-form.gohtml",
-		"tpl/navbar.gohtml",
-		"tpl/page.gohtml",
-		"tpl/base.gohtml",
-	}
-	t, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	doTemplate("user-form.gohtml", data, w)
 }
 
 func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -269,6 +224,25 @@ func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 
 func saveSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	err := s.Save(r, w)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func doTemplate(tn string, data map[string]interface{}, w http.ResponseWriter) {
+	files := []string{
+		"tpl/" + tn,
+		"tpl/navbar.gohtml",
+		"tpl/page.gohtml",
+		"tpl/base.gohtml",
+	}
+	t, err := template.New(tn).Funcs(fns).ParseFiles(files...)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = t.Execute(w, data)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
