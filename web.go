@@ -224,8 +224,6 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var formErrors []string
-
 	session, err := sessionStore.Get(r, CookieName)
 	if err != nil {
 		log.Error(err)
@@ -233,35 +231,13 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	username := strings.TrimSpace(r.FormValue("username"))
-	switch {
-	case username == "":
-		formErrors = append(formErrors, "no username specified")
-	case usernameExists(username):
-		formErrors = append(formErrors, "that username already exists")
-	}
-
-	email := strings.TrimSpace(r.FormValue("email"))
-	if email == "" {
-		formErrors = append(formErrors, "no email specified")
-	}
-
-	phone := strings.TrimSpace(r.FormValue("phone"))
-
-	password := r.FormValue("password")
-	password2 := r.FormValue("password2")
-	switch {
-	case password == "":
-		formErrors = append(formErrors, "empty password")
-	case password != password2:
-		formErrors = append(formErrors, "the passwords don't match")
-	}
+	formErrors := validateUserForm(r)
 
 	user := User{
-		Username: username,
-		Password: password,
-		Email:    email,
-		Phone:    phone,
+		Username: r.FormValue("username"),
+		Password: r.FormValue("password"),
+		Email:    r.FormValue("email"),
+		Phone:    r.FormValue("phone"),
 	}
 
 	if len(formErrors) == 0 {
@@ -303,6 +279,34 @@ func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprintf(w, "Delete: %s", ps.ByName("id"))
+}
+
+func validateUserForm(r *http.Request) []string {
+	var formErrors []string
+
+	username := strings.TrimSpace(r.FormValue("username"))
+	switch {
+	case username == "":
+		formErrors = append(formErrors, "no username specified")
+	case usernameExists(username):
+		formErrors = append(formErrors, "that username already exists")
+	}
+
+	email := strings.TrimSpace(r.FormValue("email"))
+	if email == "" {
+		formErrors = append(formErrors, "no email specified")
+	}
+
+	password := r.FormValue("password")
+	password2 := r.FormValue("password2")
+	switch {
+	case password == "":
+		formErrors = append(formErrors, "empty password")
+	case password != password2:
+		formErrors = append(formErrors, "the passwords don't match")
+	}
+
+	return formErrors
 }
 
 func loginRequired(next httprouter.Handle) httprouter.Handle {
