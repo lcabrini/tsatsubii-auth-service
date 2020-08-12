@@ -71,10 +71,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		data["error"] = flashes[0]
 	}
 
-	err := session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-	}
+	saveSession(session, w, r)
 
 	files := []string{
 		"tpl/login.gohtml",
@@ -113,12 +110,7 @@ func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	session.Values["user"] = user
-	err = session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	saveSession(session, w, r)
 
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
@@ -126,12 +118,7 @@ func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func logoutGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	session := getSession(w, r)
 	session.Values["user"] = nil
-	err := session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	saveSession(session, w, r)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -173,10 +160,7 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		delete(session.Values, "form")
 	}
 
-	err := session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-	}
+	saveSession(session, w, r)
 
 	files := []string{
 		"tpl/user-form.gohtml",
@@ -221,12 +205,7 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			session.AddFlash(e)
 		}
 		session.Values["form"] = user
-		err := session.Save(r, w)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		saveSession(session, w, r)
 
 		http.Redirect(w, r, "/users/add", http.StatusFound)
 	} else {
@@ -286,6 +265,14 @@ func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 	}
 
 	return session
+}
+
+func saveSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
+	err := s.Save(r, w)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func loginRequired(next httprouter.Handle) httprouter.Handle {
