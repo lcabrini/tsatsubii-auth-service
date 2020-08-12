@@ -169,7 +169,15 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
+	uuid, err := uuid.Parse(ps.ByName("id"))
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	user := getUser(uuid)
+	data := map[string]interface{}{}
+	data["user"] = user
+	doTemplate("user-view.gohtml", data, w)
 }
 
 func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
