@@ -33,13 +33,7 @@ var fns = template.FuncMap{
 }
 
 func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	session := getSession(w, r)
 	user, ok := session.Values["user"].(User)
 	if !ok {
 		user = User{}
@@ -69,12 +63,7 @@ func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	session := getSession(w, r)
 
 	data := map[string]interface{}{}
 	data["hidenav"] = true
@@ -82,7 +71,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		data["error"] = flashes[0]
 	}
 
-	err = session.Save(r, w)
+	err := session.Save(r, w)
 	if err != nil {
 		log.Error(err)
 	}
@@ -106,12 +95,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var redirectUrl string
 
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	session := getSession(w, r)
 
 	user, err := authenticate(r.FormValue("username"), r.FormValue("password"))
 	switch {
@@ -140,15 +124,9 @@ func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func logoutGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	session := getSession(w, r)
 	session.Values["user"] = nil
-	err = session.Save(r, w)
+	err := session.Save(r, w)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -182,12 +160,7 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	session := getSession(w, r)
 
 	data := map[string]interface{}{}
 	if flashes := session.Flashes(); len(flashes) > 0 {
@@ -200,7 +173,7 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		delete(session.Values, "form")
 	}
 
-	err = session.Save(r, w)
+	err := session.Save(r, w)
 	if err != nil {
 		log.Error(err)
 	}
@@ -224,13 +197,9 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	var err error
 
+	session := getSession(w, r)
 	formErrors := validateUserForm(r)
 
 	user := User{
@@ -252,7 +221,7 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			session.AddFlash(e)
 		}
 		session.Values["form"] = user
-		err = session.Save(r, w)
+		err := session.Save(r, w)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -307,6 +276,16 @@ func validateUserForm(r *http.Request) []string {
 	}
 
 	return formErrors
+}
+
+func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
+	session, err := sessionStore.Get(r, CookieName)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	return session
 }
 
 func loginRequired(next httprouter.Handle) httprouter.Handle {
