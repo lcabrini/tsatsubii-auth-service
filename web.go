@@ -33,13 +33,7 @@ var fns = template.FuncMap{
 }
 
 func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	session := getSession(w, r)
 	user, ok := session.Values["user"].(User)
 	if !ok {
 		user = User{}
@@ -50,31 +44,11 @@ func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	files := []string{
-		"tpl/index.gohtml",
-		"tpl/navbar.gohtml",
-		"tpl/page.gohtml",
-		"tpl/base.gohtml",
-	}
-	t, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	doTemplate("index.gohtml", nil, w)
 }
 
 func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	session := getSession(w, r)
 
 	data := map[string]interface{}{}
 	data["hidenav"] = true
@@ -82,10 +56,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		data["error"] = flashes[0]
 	}
 
-	err = session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-	}
+	saveSession(session, w, r)
 
 	files := []string{
 		"tpl/login.gohtml",
@@ -106,12 +77,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var redirectUrl string
 
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	session := getSession(w, r)
 
 	user, err := authenticate(r.FormValue("username"), r.FormValue("password"))
 	switch {
@@ -129,31 +95,15 @@ func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	session.Values["user"] = user
-	err = session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	saveSession(session, w, r)
 
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
 
 func logoutGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	session := getSession(w, r)
 	session.Values["user"] = nil
-	err = session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	saveSession(session, w, r)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -163,31 +113,11 @@ func userListGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	users, _ := userList()
 	data["users"] = users
 
-	files := []string{
-		"tpl/user-list.gohtml",
-		"tpl/navbar.gohtml",
-		"tpl/page.gohtml",
-		"tpl/base.gohtml",
-	}
-	t, err := template.New("user-list.gohtml").Funcs(fns).ParseFiles(files...)
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	doTemplate("user-list.gohtml", data, w)
 }
 
 func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	session := getSession(w, r)
 
 	data := map[string]interface{}{}
 	if flashes := session.Flashes(); len(flashes) > 0 {
@@ -200,37 +130,15 @@ func userAddGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		delete(session.Values, "form")
 	}
 
-	err = session.Save(r, w)
-	if err != nil {
-		log.Error(err)
-	}
+	saveSession(session, w, r)
 
-	files := []string{
-		"tpl/user-form.gohtml",
-		"tpl/navbar.gohtml",
-		"tpl/page.gohtml",
-		"tpl/base.gohtml",
-	}
-	t, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	doTemplate("user-form.gohtml", data, w)
 }
 
 func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session, err := sessionStore.Get(r, CookieName)
-	if err != nil {
-		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	var err error
 
+	session := getSession(w, r)
 	formErrors := validateUserForm(r)
 
 	user := User{
@@ -252,12 +160,7 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			session.AddFlash(e)
 		}
 		session.Values["form"] = user
-		err = session.Save(r, w)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		saveSession(session, w, r)
 
 		http.Redirect(w, r, "/users/add", http.StatusFound)
 	} else {
@@ -307,6 +210,43 @@ func validateUserForm(r *http.Request) []string {
 	}
 
 	return formErrors
+}
+
+func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
+	session, err := sessionStore.Get(r, CookieName)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	return session
+}
+
+func saveSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
+	err := s.Save(r, w)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func doTemplate(tn string, data map[string]interface{}, w http.ResponseWriter) {
+	files := []string{
+		"tpl/" + tn,
+		"tpl/navbar.gohtml",
+		"tpl/page.gohtml",
+		"tpl/base.gohtml",
+	}
+	t, err := template.New(tn).Funcs(fns).ParseFiles(files...)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func loginRequired(next httprouter.Handle) httprouter.Handle {
