@@ -168,8 +168,16 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
-func userGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "View: g%s", ps.ByName("id"))
+func userViewGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	uuid, err := uuid.Parse(ps.ByName("id"))
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	user := getUser(uuid)
+	data := map[string]interface{}{}
+	data["user"] = user
+	doTemplate("user-view.gohtml", data, w)
 }
 
 func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -291,7 +299,7 @@ func startHttp() {
 	router.GET("/users/list", loginRequired(userListGet))
 	router.GET("/users/add", loginRequired(userAddGet))
 	router.POST("/users/add", loginRequired(userAddPost))
-	router.GET("/users/view/:id", userGet)
+	router.GET("/users/view/:id", loginRequired(userViewGet))
 	router.GET("/users/edit/:id", userEditGet)
 	router.POST("/users/edit/:id", userEditPost)
 	router.GET("/users/delete/:id", userDeleteGet)

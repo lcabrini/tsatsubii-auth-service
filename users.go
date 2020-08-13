@@ -97,6 +97,28 @@ func authenticate(username string, password string) (User, error) {
 	return user, nil
 }
 
+func getUser(id uuid.UUID) User {
+	q := "SELECT *" +
+		" FROM users" +
+		" WHERE id = $1"
+	user := User{}
+	err := db.QueryRow(q, id).Scan(
+		&user.Id,
+		&user.Username,
+		&user.Password,
+		&user.Email,
+		&user.Phone,
+		&user.Token,
+		&user.Active,
+		&user.CreatedAt)
+	switch {
+	case err != nil:
+		return User{}
+	default:
+		return user
+	}
+}
+
 func addUser(user User) (User, error) {
 	user.Id = uuid.New()
 	user.Token = uuid.New()

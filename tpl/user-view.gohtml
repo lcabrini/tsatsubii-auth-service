@@ -1,0 +1,30 @@
+{{template "base" .}}
+{{define "main-title"}}
+  <div class="container">
+    <h2 class="title">User Details: 
+      <span class="has-text-info">{{.user.Username}}</span>
+    </h2>
+{{end}}
+
+{{define "main"}}
+  <div class="columns">
+    <div class="column">
+      <p>Username</p>
+      <p><strong>{{.user.Username}}</strong></p>
+    </div>
+
+    <div class="column"></div>
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      <p>Email</p>
+      <p><strong>{{.user.Email}}</strong></p>
+    </div>
+
+    <div class="column">
+      <p>Phone</p>
+      <p><strong>{{.user.Phone}}</strong></p>
+    </div>
+  </div>
+{{end}} 
