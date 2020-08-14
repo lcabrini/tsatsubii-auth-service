@@ -181,11 +181,63 @@ func userViewGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+	session := getSession(w, r)
+
+	id, err := uuid.Parse(ps.ByName("id"))
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	data := map[string]interface{}{}
+	if flashes := session.Flashes(); len(flashes) > 0 {
+		data["errors"] = flashes
+	}
+	data["user"] = getUser(id)
+
+	saveSession(session, w, r)
+
+	doTemplate("user-form.gohtml", data, w)
 }
 
 func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "Edit: %s", ps.ByName("id"))
+	var err error
+
+	session := getSession(w, r)
+	formErrors := validateUserForm(r)
+
+	id, err := uuid.Parse(ps.ByName("id"))
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	user := User{
+		Id:       id,
+		Username: r.FormValue("username"),
+		Password: r.FormValue("password"),
+		Email:    r.FormValue("email"),
+		Phone:    r.FormValue("phone"),
+	}
+
+	if len(formErrors) == 0 {
+		user, err = storeUser(user)
+		if err != nil {
+			formErrors = append(formErrors, err.Error())
+		}
+	}
+
+	if len(formErrors) > 0 {
+		for _, e := range formErrors {
+			session.AddFlash(e)
+		}
+		session.Values["form"] = user
+		saveSession(session, w, r)
+
+		http.Redirect(w, r, r.RequestURI, http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/users/list", http.StatusFound)
+	}
 }
 
 func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
