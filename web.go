@@ -247,11 +247,16 @@ func userDeleteGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 func validateUserForm(r *http.Request) []string {
 	var formErrors []string
 
+	id, err := uuid.Parse(r.FormValue("id"))
+	if err != nil {
+		id = uuid.Nil
+	}
+
 	username := strings.TrimSpace(r.FormValue("username"))
 	switch {
 	case username == "":
 		formErrors = append(formErrors, "no username specified")
-	case usernameExists(username):
+	case usernameExists(username, id):
 		formErrors = append(formErrors, "that username already exists")
 	}
 
