@@ -212,13 +212,12 @@ func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	user := User{
-		Id:       id,
-		Username: r.FormValue("username"),
-		Password: r.FormValue("password"),
-		Email:    r.FormValue("email"),
-		Phone:    r.FormValue("phone"),
-	}
+	user := getUser(id)
+	user.Id = id
+	user.Username = r.FormValue("username")
+	user.Password = r.FormValue("password")
+	user.Email = r.FormValue("email")
+	user.Phone = r.FormValue("phone")
 
 	if len(formErrors) == 0 {
 		user, err = storeUser(user)
