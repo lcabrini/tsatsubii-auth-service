@@ -37,28 +37,32 @@ func storeUser(user User) (User, error) {
 	}
 }
 
-func usernameExists(username string) bool {
+func usernameExists(username string, ex uuid.UUID) bool {
 	var count int
+	var err error
 
 	q := "SELECT COUNT(*) " +
 		"FROM users " +
 		"WHERE username = $1"
 
-	rows, err := db.Query(q, username)
+	if ex != uuid.Nil {
+		q += " AND id != $2"
+		err = db.QueryRow(q, username, ex).Scan(&count)
+	} else {
+		err = db.QueryRow(q, username).Scan(&count)
+	}
+
 	if err != nil {
 		log.Error(err)
 		// TODO: what should be done here? Do we propagate the error,
 		// return false or something else?
 	}
-	defer rows.Close()
 
-	rows.Next()
-	rows.Scan(&count)
 	return count == 1
 }
 
 func initUsers() {
-	if !usernameExists("sa") {
+	if !usernameExists("sa", uuid.Nil) {
 		log.Info("creating sysadmin user")
 		user := User{
 			Username: "sa",
