@@ -335,6 +335,15 @@ func loginRequired(next httprouter.Handle) httprouter.Handle {
 	}
 }
 
+func do500(w http.ResponseWriter, r *http.Request, err interface{}) {
+	log.Error(err)
+
+	data := map[string]interface{}{}
+	data["error"] = err
+
+	doTemplate("500.gohtml", data, w)
+}
+
 func startHttp() {
 	authKey := securecookie.GenerateRandomKey(64)
 	encKey := securecookie.GenerateRandomKey(32)
@@ -347,6 +356,7 @@ func startHttp() {
 	gob.Register(User{})
 
 	router := httprouter.New()
+	router.PanicHandler = do500
 	router.ServeFiles("/static/*filepath", http.Dir("./static"))
 	router.GET("/", indexGet)
 	router.GET("/login", loginGet)

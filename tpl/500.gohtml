@@ -1,0 +1,13 @@
+{{template "base" .}}
+{{define "main-title"}}
+  <div class="container">
+    <h2 class="title">Internal Server Error</h2>
+  </div>
+{{end}}
+
+{{define "main"}}
+  <p>Sorry but the server encountered an error. This has been logged. The error
+    message is:</p>
+
+  <p><strong>{{.error}}</strong></p>
+{{end}}
