@@ -344,6 +344,10 @@ func do500(w http.ResponseWriter, r *http.Request, err interface{}) {
 	doTemplate("500.gohtml", data, w)
 }
 
+func do404(w http.ResponseWriter, r *http.Request) {
+	doTemplate("404.gohtml", nil, w)
+}
+
 func startHttp() {
 	authKey := securecookie.GenerateRandomKey(64)
 	encKey := securecookie.GenerateRandomKey(32)
@@ -357,6 +361,7 @@ func startHttp() {
 
 	router := httprouter.New()
 	router.PanicHandler = do500
+	router.NotFound = http.HandlerFunc(do404)
 	router.ServeFiles("/static/*filepath", http.Dir("./static"))
 	router.GET("/", indexGet)
 	router.GET("/login", loginGet)
