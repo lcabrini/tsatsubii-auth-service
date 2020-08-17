@@ -280,7 +280,6 @@ func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 	session, err := sessionStore.Get(r, CookieName)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	return session
