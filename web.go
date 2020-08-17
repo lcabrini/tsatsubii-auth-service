@@ -315,11 +315,7 @@ func doTemplate(tn string, data map[string]interface{}, w http.ResponseWriter) {
 
 func loginRequired(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		session, err := sessionStore.Get(r, CookieName)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		session := getSession(w, r)
 
 		user, ok := session.Values["user"].(User)
 		if !ok {
