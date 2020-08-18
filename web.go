@@ -33,17 +33,6 @@ var fns = template.FuncMap{
 }
 
 func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session := getSession(w, r)
-	user, ok := session.Values["user"].(User)
-	if !ok {
-		user = User{}
-	}
-
-	if user.Id == uuid.Nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
 	doTemplate("index.gohtml", nil, w)
 }
 
@@ -358,7 +347,7 @@ func startHttp() {
 	router.PanicHandler = do500
 	router.NotFound = http.HandlerFunc(do404)
 	router.ServeFiles("/static/*filepath", http.Dir("./static"))
-	router.GET("/", indexGet)
+	router.GET("/", loginRequired(indexGet))
 	router.GET("/login", loginGet)
 	router.POST("/login", loginPost)
 	router.GET("/logout", logoutGet)
