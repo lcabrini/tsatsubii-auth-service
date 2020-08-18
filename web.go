@@ -33,17 +33,6 @@ var fns = template.FuncMap{
 }
 
 func indexGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	session := getSession(w, r)
-	user, ok := session.Values["user"].(User)
-	if !ok {
-		user = User{}
-	}
-
-	if user.Id == uuid.Nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
 	doTemplate("index.gohtml", nil, w)
 }
 
@@ -70,7 +59,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 	}
 }
 
@@ -88,7 +77,7 @@ func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		session.AddFlash("User is inactive")
 		redirectUrl = "/login"
 	case err != nil:
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 		return
 	default:
 		redirectUrl = "/"
@@ -169,12 +158,19 @@ func userAddPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func userViewGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	uuid, err := uuid.Parse(ps.ByName("id"))
+	id, err := uuid.Parse(ps.ByName("id"))
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		do404(w, r)
+		return
 	}
-	user := getUser(uuid)
+
+	user := getUser(id)
+	if user.Id == uuid.Nil {
+		do404(w, r)
+		return
+	}
+
 	data := map[string]interface{}{}
 	data["user"] = user
 	doTemplate("user-view.gohtml", data, w)
@@ -186,7 +182,8 @@ func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := uuid.Parse(ps.ByName("id"))
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		do404(w, r)
+		return
 	}
 
 	data := map[string]interface{}{}
@@ -209,7 +206,8 @@ func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	id, err := uuid.Parse(ps.ByName("id"))
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		do404(w, r)
+		return
 	}
 
 	user := getUser(id)
@@ -280,7 +278,6 @@ func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 	session, err := sessionStore.Get(r, CookieName)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	return session
@@ -290,7 +287,7 @@ func saveSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	err := s.Save(r, w)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 	}
 }
 
@@ -304,22 +301,19 @@ func doTemplate(tn string, data map[string]interface{}, w http.ResponseWriter) {
 	t, err := template.New(tn).Funcs(fns).ParseFiles(files...)
 	if err != nil {
 		log.Error(err)
+		panic(err.Error())
 	}
 
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 	}
 }
 
 func loginRequired(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		session, err := sessionStore.Get(r, CookieName)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		session := getSession(w, r)
 
 		user, ok := session.Values["user"].(User)
 		if !ok {
@@ -335,6 +329,21 @@ func loginRequired(next httprouter.Handle) httprouter.Handle {
 	}
 }
 
+func do500(w http.ResponseWriter, r *http.Request, err interface{}) {
+	log.Error(err)
+
+	data := map[string]interface{}{}
+	data["error"] = err
+
+	w.WriteHeader(http.StatusInternalServerError)
+	doTemplate("500.gohtml", data, w)
+}
+
+func do404(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+	doTemplate("404.gohtml", nil, w)
+}
+
 func startHttp() {
 	authKey := securecookie.GenerateRandomKey(64)
 	encKey := securecookie.GenerateRandomKey(32)
@@ -347,8 +356,10 @@ func startHttp() {
 	gob.Register(User{})
 
 	router := httprouter.New()
+	router.PanicHandler = do500
+	router.NotFound = http.HandlerFunc(do404)
 	router.ServeFiles("/static/*filepath", http.Dir("./static"))
-	router.GET("/", indexGet)
+	router.GET("/", loginRequired(indexGet))
 	router.GET("/login", loginGet)
 	router.POST("/login", loginPost)
 	router.GET("/logout", logoutGet)
