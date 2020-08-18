@@ -59,7 +59,7 @@ func loginGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 	}
 }
 
@@ -77,7 +77,7 @@ func loginPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		session.AddFlash("User is inactive")
 		redirectUrl = "/login"
 	case err != nil:
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 		return
 	default:
 		redirectUrl = "/"
@@ -161,7 +161,8 @@ func userViewGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uuid, err := uuid.Parse(ps.ByName("id"))
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		do404(w, r)
+		return
 	}
 	user := getUser(uuid)
 	data := map[string]interface{}{}
@@ -175,7 +176,8 @@ func userEditGet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := uuid.Parse(ps.ByName("id"))
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		do404(w, r)
+		return
 	}
 
 	data := map[string]interface{}{}
@@ -198,7 +200,8 @@ func userEditPost(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	id, err := uuid.Parse(ps.ByName("id"))
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		do404(w, r)
+		return
 	}
 
 	user := getUser(id)
@@ -278,7 +281,7 @@ func saveSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	err := s.Save(r, w)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 	}
 }
 
@@ -292,12 +295,13 @@ func doTemplate(tn string, data map[string]interface{}, w http.ResponseWriter) {
 	t, err := template.New(tn).Funcs(fns).ParseFiles(files...)
 	if err != nil {
 		log.Error(err)
+		panic(err.Error())
 	}
 
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err.Error())
 	}
 }
 
