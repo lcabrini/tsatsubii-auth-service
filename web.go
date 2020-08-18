@@ -335,10 +335,12 @@ func do500(w http.ResponseWriter, r *http.Request, err interface{}) {
 	data := map[string]interface{}{}
 	data["error"] = err
 
+	w.WriteHeader(http.StatusInternalServerError)
 	doTemplate("500.gohtml", data, w)
 }
 
 func do404(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
 	doTemplate("404.gohtml", nil, w)
 }
 
